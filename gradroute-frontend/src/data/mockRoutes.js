@@ -1,0 +1,80 @@
+export const mockRoutes = [
+  {
+    id: '1',
+    tier: 'safe',
+    university: 'TU Munich',
+    program: 'M.Sc. Computational Science and Engineering',
+    country: 'Germany',
+    feasibility: 88,
+    totalCost: 1200000,
+    userBudget: 1500000,
+    prTimeline: 48,
+    roiVector: 'High-Performance Computing',
+    marketDemand: 'High'
+  },
+  {
+    id: '2',
+    tier: 'safe',
+    university: 'RWTH Aachen',
+    program: 'M.Sc. Software Systems Engineering',
+    country: 'Germany',
+    feasibility: 85,
+    totalCost: 1100000,
+    userBudget: 1500000,
+    prTimeline: 48,
+    roiVector: 'Embedded Systems',
+    marketDemand: 'High'
+  },
+  {
+    id: '3',
+    tier: 'moderate',
+    university: 'University of Waterloo',
+    program: 'M.Eng. Electrical and Computer Engineering',
+    country: 'Canada',
+    feasibility: 72,
+    totalCost: 2800000,
+    userBudget: 2500000,
+    prTimeline: 36,
+    roiVector: 'Systems Engineering',
+    marketDemand: 'Very High'
+  },
+  {
+    id: '4',
+    tier: 'moderate',
+    university: 'TU Delft',
+    program: 'M.Sc. Computer Engineering',
+    country: 'Netherlands',
+    feasibility: 68,
+    totalCost: 2200000,
+    userBudget: 2500000,
+    prTimeline: 60,
+    roiVector: 'Quantum Computing',
+    marketDemand: 'High'
+  },
+  {
+    id: '5',
+    tier: 'ambitious',
+    university: 'ETH Zurich',
+    program: 'M.Sc. Computer Science',
+    country: 'Switzerland',
+    feasibility: 45,
+    totalCost: 3500000,
+    userBudget: 2500000,
+    prTimeline: 72,
+    roiVector: 'AI/ML Research',
+    marketDemand: 'Elite'
+  },
+  {
+    id: '6',
+    tier: 'ambitious',
+    university: 'Stanford University',
+    program: 'M.S. Electrical Engineering',
+    country: 'USA',
+    feasibility: 38,
+    totalCost: 6500000,
+    userBudget: 2500000,
+    prTimeline: 84,
+    roiVector: 'Silicon Valley Tech',
+    marketDemand: 'Premium'
+  }
+]
