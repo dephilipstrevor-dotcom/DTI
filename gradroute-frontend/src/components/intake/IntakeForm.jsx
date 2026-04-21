@@ -42,17 +42,6 @@ const IntakeForm = () => {
     setIsLoading(true)
 
     try {
-      // DB columns are camelCase now (matched to formData keys)
-      const { error: intakeError } = await supabase
-        .from('intake_data')
-        .upsert({ user_id: user.id, ...formData }, { onConflict: 'user_id' })
-
-      if (intakeError) {
-        console.error('Failed to save intake:', intakeError)
-        setIsLoading(false)
-        return
-      }
-
       const token = (await supabase.auth.getSession()).data.session?.access_token
       const response = await fetch(`${API_BASE_URL}/routes/generate`, {
         method: 'POST',
@@ -64,12 +53,13 @@ const IntakeForm = () => {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
+        const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.error || 'Failed to generate routes')
       }
       // Success: keep loading true, LoadingSequence will call handleLoadingComplete
     } catch (error) {
       console.error('Route generation failed:', error)
+      alert('Route generation failed: ' + (error?.message || 'unknown'))
       setIsLoading(false)
     }
   }
