@@ -40,8 +40,6 @@ function App() {
       <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
       <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
       <Route path="/compare" element={<ProtectedRoute><ComparePage /></ProtectedRoute>} />
-    <Route path="/compare" element={<ProtectedRoute><ComparePage /></ProtectedRoute>} />
-
     </Routes>
   )
 }

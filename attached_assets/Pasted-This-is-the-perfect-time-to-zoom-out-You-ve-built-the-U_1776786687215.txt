@@ -1,0 +1,76 @@
+This is the perfect time to zoom out. You’ve built the UI, you’ve provisioned the database, and you understand the backend vault. 
+
+Now, let’s run a simulation. Here is the exact, end-to-end operational flow of the GradRoute engine from the moment a user first encounters it, detailing exactly what the user sees and what the machine is doing in the dark.
+
+***
+
+### Phase 1: Infiltration (Authentication)
+**The User Experience:**
+The user lands on your stark, dark-mode landing page. They don’t see a smiling student; they see the data path vector. They click **INITIALIZE ENGINE**. They are routed to a split-screen terminal and click "Continue with Google."
+
+**The Machine Logic:**
+1. Google verifies their identity and hands a secure token back to your frontend.
+2. The frontend passes that token to your **Supabase Auth** layer.
+3. Supabase creates a secure, encrypted ID for them in the hidden `auth.users` table.
+4. Your custom SQL trigger silently fires, copying their name and email into your `profiles` table so the UI can greet them.
+
+---
+
+### Phase 2: System Calibration (The Intake Engine)
+**The User Experience:**
+They are dropped into the `Configure Your Parameters` screen. There are no multi-page wizards. They input their hard constraints: an 8.25 CGPA, a ₹15L budget, and a target in "Systems Engineering." As they type, the HUD on the right physically reacts, changing from "AWAITING INPUT" to a pulsing green "LIVE". They click **EXECUTE ENGINE**.
+
+**The Machine Logic:**
+1. The frontend gathers all inputs into a strict JSON payload.
+2. The frontend fires a POST request to your **Compute Layer** (your Python FastAPI server or Supabase Edge Function).
+3. **The Vault activates:** The backend verifies their Auth token. If valid, it writes these raw constraints into the `intake_data` table in Supabase.
+
+---
+
+### Phase 3: The Black Box (Proprietary Routing)
+**The User Experience:**
+The user sees a brief loading state—maybe a subtle scanning animation—as the system calculates. 
+
+**The Machine Logic (Happens in milliseconds):**
+1. Your backend script (`routing_math.py`) takes over. It completely ignores the frontend now.
+2. It pulls the user's ₹15L budget and 8.25 CGPA.
+3. It queries your master database of universities and runs a deterministic filter. 
+    * *Budget > $50k?* Drop all US Ivies. 
+    * *CGPA > 8.0?* Unlock Tier-1 German public systems.
+4. It calculates the exact "PR Horizon" and "Budget Delta" mathematically.
+5. It formats the surviving routes into `Safe`, `Moderate`, and `Ambitious` tiers.
+6. It saves these results into the `routes` table in Supabase and fires the formatted JSON back to the frontend.
+
+---
+
+### Phase 4: Tactical Overview (The Matrix & Deep Dive)
+**The User Experience:**
+The UI renders the **Route Matrix**. The user sees their global feasibility mapped out. They see TU Munich sitting there as a 88% Safe Match. They click the solid, glowing **DECRYPT FULL PATHWAY** button. 
+They are taken to the Deep Dive screen, where they see their exact financial arbitrage and system validation (showing exactly *why* they cleared the cutoff).
+
+**The Machine Logic:**
+The frontend isn't doing any math here. It is simply acting as a high-end display terminal, rendering the calculated JSON data that the backend just handed it.
+
+---
+
+### Phase 5: Root Access (The Interrogation Terminal)
+**The User Experience:**
+The user has a highly specific question. They scroll down to the Command Line and type: *"Can I offset the Munich deficit by working in defense tech?"* and hit Enter. The text flows upward. The Engine responds in raw text, but instantly, the right-side HUD updates, rendering a custom `Liquidity Breakdown` ledger card based on their exact question.
+
+**The Machine Logic:**
+1. The frontend POSTs the user's string of text to your backend (`/api/mentor/chat`).
+2. Your backend pulls the user's specific context from Supabase (it knows they are looking at Munich, it knows their budget is ₹15L).
+3. Your backend packages this data with your highly classified **System Prompt** and fires it to the AI (OpenAI or Anthropic).
+4. The AI processes it and streams the response back to your backend.
+5. Your backend streams it to the frontend. 
+6. *The Magic Trick:* If the AI determines a financial card is needed, it outputs a specific hidden code (e.g., `[RENDER_MODULE: LEDGER]`). The frontend intercepts this code, hides it from the text chat, and uses it to trigger the React component in the right-side HUD.
+
+***
+
+### The Summary
+The user feels like they are operating a single, sentient supercomputer. 
+In reality, they are interacting with a highly controlled **Frontend UI**, which is securely whispering to a **Backend Compute Layer**, which is constantly reading and writing to a locked **Database Vault**, while occasionally tapping an **LLM** for dynamic conversation.
+
+That is the entire machine. 
+
+Now, the question is: which piece of the "Black Box" do you want to build first? Do we map out the deterministic math logic for the Route Engine, or do we write the System Prompt for the Interrogation Terminal?

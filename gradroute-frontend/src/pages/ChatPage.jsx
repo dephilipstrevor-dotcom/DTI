@@ -16,7 +16,8 @@ const ChatPage = () => {
   const [conversations, setConversations] = useState([])
   const [activeConversationId, setActiveConversationId] = useState(null)
   const [isTyping, setIsTyping] = useState(false)
-  const [activeHUD, setActiveHUD] = useState('financial')
+  const [activeHUD, setActiveHUD] = useState('routes')
+  const [activeModule, setActiveModule] = useState(null)
   const [userContext, setUserContext] = useState({ target: 'Engineering', budget: '₹15L', deficit: '-₹2.5L', cgpa: 8.25, ielts: null })
   const [userRoutes, setUserRoutes] = useState([])
 
@@ -72,17 +73,16 @@ const ChatPage = () => {
     const loadMessages = async () => {
       const { data: msgs } = await supabase.from('messages').select('*').eq('conversation_id', activeConversationId).order('created_at', { ascending: true })
       setMessages(msgs || [])
+      const lastWithModule = [...(msgs || [])].reverse().find(m => m.module)
+      if (lastWithModule) setActiveModule(lastWithModule.module)
     }
     loadMessages()
   }, [activeConversationId])
 
   const handleSendMessage = async (text) => {
-    const newUserMsg = { conversation_id: activeConversationId, role: 'user', content: text }
-    await supabase.from('messages').insert(newUserMsg)
-    setMessages(prev => [...prev, { ...newUserMsg, id: Date.now() }])
+    setMessages(prev => [...prev, { id: Date.now(), conversation_id: activeConversationId, role: 'user', content: text }])
     setIsTyping(true)
 
-    // Call backend chat endpoint
     try {
       const token = (await supabase.auth.getSession()).data.session?.access_token
       const res = await fetch(`${API_BASE_URL}/chat/message`, {
@@ -94,12 +94,17 @@ const ChatPage = () => {
         body: JSON.stringify({ conversationId: activeConversationId, message: text })
       })
       if (res.ok) {
-        const { reply } = await res.json()
-        setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: reply }])
-        setActiveHUD('routes')
+        const { reply, module } = await res.json()
+        setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: reply, module }])
+        if (module) setActiveModule(module)
+        else setActiveHUD('routes')
+      } else {
+        const err = await res.json().catch(() => ({}))
+        setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: `ENGINE FAULT: ${err.error || res.statusText}` }])
       }
     } catch (err) {
       console.error('Chat error:', err)
+      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: 'NETWORK FAULT. Retry.' }])
     } finally {
       setIsTyping(false)
     }
@@ -128,7 +133,7 @@ const ChatPage = () => {
         </div>
 
         <div className="w-1/4 border-l border-white/5 p-4">
-          <DynamicHUD activeView={activeHUD} userContext={userContext} comparisonRoutes={userRoutes.slice(0, 2)} />
+          <DynamicHUD activeView={activeHUD} activeModule={activeModule} comparisonRoutes={userRoutes.slice(0, 3)} />
         </div>
       </div>
     </>

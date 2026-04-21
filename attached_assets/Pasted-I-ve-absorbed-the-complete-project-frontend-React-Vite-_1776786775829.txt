@@ -1,0 +1,37 @@
+I've absorbed the complete project—frontend (React/Vite/Tailwind) and backend (Node/Express with Supabase). Here's my assessment:
+
+**What's already built:**
+- Authentication (Supabase email/password + Google OAuth) is functional.
+- Frontend UI is complete with all pages (Landing, Auth, Intake, Dashboard, Route Details, Chat, Account, Compare).
+- Backend API endpoints are defined and partially implemented (`/intake/evaluate`, `/routes/generate`, `/routes`, `/chat/message`).
+- Basic filtering logic exists in `filteringService.js` but relies on a `universities` table that likely doesn't exist yet.
+
+**What's missing/broken:**
+1. **Database schema** – Tables (`intake_data`, `routes`, `universities`, `conversations`, `messages`) are not defined in Supabase.
+2. **University data** – The `universities` table needs seed data for the filtering engine to work.
+3. **Route generation** – The `generateRoutes` function runs, but without `universities` data it returns nothing.
+4. **Chat/LLM** – The Gemini integration is basic; it doesn't yet handle `[RENDER_MODULE]` commands or context injection for the Dynamic HUD.
+5. **Financial enhancements** – Leverage Simulator and Phased Ramp-Up are not implemented.
+6. **Error handling & loading states** – Some pages fall back to hardcoded data.
+
+---
+
+### Feature-by-Feature Build Plan
+
+| Phase | Feature | Tasks |
+|-------|---------|-------|
+| **1** | **Database Setup & Auth Polish** | Create Supabase tables with RLS policies. Seed `universities` with 10-15 sample programs. Verify login/signup flow works end-to-end. |
+| **2** | **Intake Engine & Live Evaluation** | Ensure `/intake/evaluate` returns realistic counts/feasibility based on `universities` data. Fix LiveHUD to display accurate stats. |
+| **3** | **Route Generation & Matrix Display** | Complete `POST /routes/generate` to create routes, store in DB, return to frontend. Make Dashboard fetch and display real routes. |
+| **4** | **Route Details Blueprint** | Wire up `/report/:id` to show actual route data. Add **Phased Ramp-Up** to `FinancialLedger` (Semester 1/2/3+ income tiers). |
+| **5** | **Compare & Saved Routes** | Ensure compare page works with selected routes. Fix bookmark toggle and saved routes display in Account page. |
+| **6** | **Interrogation Terminal (Chat)** | Enhance `/chat/message` to inject user context, use system prompt, and detect `[RENDER_MODULE]` triggers. Add **Leverage Simulator** module for deficit routes. |
+| **7** | **Polish & Deploy** | Add loading skeletons, error boundaries, PDF export. Prepare for deployment (environment variables, build scripts). |
+
+---
+
+### Next Step: Start Phase 1
+
+I'll provide the **Supabase SQL schema** for all required tables and a **seed script** for sample universities. Once that's in place, we can test auth and move to Phase 2.
+
+Do you want me to drop the SQL for the database schema now?
