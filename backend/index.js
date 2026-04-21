@@ -88,10 +88,15 @@ app.use('/api/chat', chatLimiter, chatRoutes)
 app.get('/health', (req, res) => res.send('OK'))
 
 // ---------- Static frontend ----------
+// SPA fallback. The regex excludes `/api/*` AND `/health` so the intent
+// doesn't rely on Express route-ordering being preserved in future edits.
+// Static assets (css/js/img under distDir) are served by express.static
+// above; anything else that's not an API call or the health probe falls
+// back to index.html so client-side routing can handle it.
 const distDir = path.join(__dirname, '..', 'gradroute-frontend', 'dist')
 if (fs.existsSync(distDir)) {
   app.use(express.static(distDir))
-  app.get(/^\/(?!api\/).*/, (req, res) => {
+  app.get(/^\/(?!api\/|health$).*/, (req, res) => {
     res.sendFile(path.join(distDir, 'index.html'))
   })
 }
