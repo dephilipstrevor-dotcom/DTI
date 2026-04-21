@@ -183,3 +183,25 @@ create policy "msg self all" on public.messages
 -- universities: world-readable catalog
 drop policy if exists "universities readable" on public.universities;
 create policy "universities readable" on public.universities for select using (true);
+
+-- =============================================================
+-- Grants (required: service_role and authenticated need table privileges)
+-- Your project appears to have had grants revoked; this restores them.
+-- =============================================================
+grant usage on schema public to anon, authenticated, service_role;
+
+grant all on public.profiles       to service_role;
+grant all on public.intake_data    to service_role;
+grant all on public.routes         to service_role;
+grant all on public.conversations  to service_role;
+grant all on public.messages       to service_role;
+grant all on public.universities   to service_role;
+
+grant select, insert, update, delete on public.profiles      to authenticated;
+grant select, insert, update, delete on public.intake_data   to authenticated;
+grant select, insert, update, delete on public.routes        to authenticated;
+grant select, insert, update, delete on public.conversations to authenticated;
+grant select, insert, update, delete on public.messages      to authenticated;
+grant select                        on public.universities   to authenticated, anon;
+
+grant usage, select on all sequences in schema public to service_role, authenticated;
