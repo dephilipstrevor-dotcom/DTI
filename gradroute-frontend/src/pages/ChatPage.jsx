@@ -8,6 +8,8 @@ import ConversationFeed from '../components/chat/ConversationFeed'
 import DynamicHUD from '../components/chat/DynamicHUD'
 import CommandInput from '../components/chat/CommandInput'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+
 const ChatPage = () => {
   const { user } = useAuth()
   const [messages, setMessages] = useState([])
@@ -16,7 +18,9 @@ const ChatPage = () => {
   const [isTyping, setIsTyping] = useState(false)
   const [activeHUD, setActiveHUD] = useState('financial')
   const [userContext, setUserContext] = useState({ target: 'Engineering', budget: '₹15L', deficit: '-₹2.5L', cgpa: 8.25, ielts: null })
+  const [userRoutes, setUserRoutes] = useState([])
 
+  // Load user context and conversations
   useEffect(() => {
     const loadUserData = async () => {
       const { data: intake } = await supabase.from('intake_data').select('*').eq('user_id', user.id).single()
@@ -43,6 +47,26 @@ const ChatPage = () => {
     loadUserData()
   }, [user])
 
+  // Fetch user routes for DynamicHUD
+  useEffect(() => {
+    const fetchRoutes = async () => {
+      try {
+        const token = (await supabase.auth.getSession()).data.session?.access_token
+        const res = await fetch(`${API_BASE_URL}/routes`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setUserRoutes(data)
+        }
+      } catch (err) {
+        console.error('Failed to fetch routes for chat:', err)
+      }
+    }
+    if (user) fetchRoutes()
+  }, [user])
+
+  // Load messages when conversation changes
   useEffect(() => {
     if (!activeConversationId) return
     const loadMessages = async () => {
@@ -58,13 +82,27 @@ const ChatPage = () => {
     setMessages(prev => [...prev, { ...newUserMsg, id: Date.now() }])
     setIsTyping(true)
 
-    setTimeout(async () => {
-      const aiResponse = { conversation_id: activeConversationId, role: 'assistant', content: 'Based on your profile, defense‑tech Werkstudent positions in Munich can offset your deficit within 7‑9 months.' }
-      await supabase.from('messages').insert(aiResponse)
-      setMessages(prev => [...prev, { ...aiResponse, id: Date.now() + 1 }])
+    // Call backend chat endpoint
+    try {
+      const token = (await supabase.auth.getSession()).data.session?.access_token
+      const res = await fetch(`${API_BASE_URL}/chat/message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ conversationId: activeConversationId, message: text })
+      })
+      if (res.ok) {
+        const { reply } = await res.json()
+        setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: reply }])
+        setActiveHUD('routes')
+      }
+    } catch (err) {
+      console.error('Chat error:', err)
+    } finally {
       setIsTyping(false)
-      setActiveHUD('routes')
-    }, 1500)
+    }
   }
 
   return (
@@ -90,7 +128,7 @@ const ChatPage = () => {
         </div>
 
         <div className="w-1/4 border-l border-white/5 p-4">
-          <DynamicHUD activeView={activeHUD} userContext={userContext} />
+          <DynamicHUD activeView={activeHUD} userContext={userContext} comparisonRoutes={userRoutes.slice(0, 2)} />
         </div>
       </div>
     </>

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const LoadingSequence = ({ onComplete }) => {
   const [step, setStep] = useState(0)
+  const timerRef = useRef(null)
   const messages = [
     'Initializing constraint solver...',
     'Filtering 5,000+ global programs...',
@@ -11,14 +12,24 @@ const LoadingSequence = ({ onComplete }) => {
   ]
 
   useEffect(() => {
-    if (step < messages.length) {
-      const timer = setTimeout(() => setStep(step + 1), 400)
-      return () => clearTimeout(timer)
-    } else {
-      const timer = setTimeout(onComplete, 300)
-      return () => clearTimeout(timer)
+    const advanceStep = () => {
+      setStep(prev => {
+        const next = prev + 1
+        if (next < messages.length) {
+          timerRef.current = setTimeout(advanceStep, 400)
+        } else if (next === messages.length) {
+          timerRef.current = setTimeout(onComplete, 300)
+        }
+        return next
+      })
     }
-  }, [step, onComplete])
+
+    timerRef.current = setTimeout(advanceStep, 400)
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [onComplete, messages.length])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#020617]">
@@ -47,7 +58,7 @@ const LoadingSequence = ({ onComplete }) => {
         
         <div className="mt-6 pt-4 border-t border-white/10">
           <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-            <div 
+            <div  
               className="h-full bg-gradient-to-r from-brand-copper to-orange-400 transition-all duration-400"
               style={{ width: `${(step / messages.length) * 100}%` }}
             ></div>

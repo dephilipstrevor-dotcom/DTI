@@ -13,10 +13,18 @@ const AccountPage = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const { data: routesData } = await supabase.from('routes').select('*').eq('user_id', user.id)
+      const { data: routesData } = await supabase
+        .from('routes')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('saved', true)
       setSavedRoutes(routesData || [])
 
-      const { data: intake } = await supabase.from('intake_data').select('*').eq('user_id', user.id).single()
+      const { data: intake } = await supabase
+        .from('intake_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
       setIntakeData(intake)
     }
     fetchUserData()
@@ -91,7 +99,7 @@ const AccountPage = () => {
               <div className="bg-[#0F172A] border border-white/5 rounded-xl p-6">
                 <h2 className="text-lg font-bold text-white mb-4">Saved Routes</h2>
                 {savedRoutes.length === 0 ? (
-                  <p className="text-gray-400 text-sm">No routes generated yet. Go to <Link to="/intake" className="text-brand-copper hover:underline">Intake Engine</Link> to create your first route.</p>
+                  <p className="text-gray-400 text-sm">No saved routes yet. Click the bookmark icon on any route card to save it.</p>
                 ) : (
                   <div className="space-y-3">
                     {savedRoutes.map(route => (

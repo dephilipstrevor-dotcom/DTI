@@ -12,6 +12,8 @@ import PRTimeline from '../components/routeDetails/PRTimeline'
 import TargetOutcomes from '../components/routeDetails/TargetOutcomes'
 import DeploymentProtocol from '../components/routeDetails/DeploymentProtocol'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+
 const RouteDetailsPage = () => {
   const { routeId } = useParams()
   const { user } = useAuth()
@@ -21,18 +23,33 @@ const RouteDetailsPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: routeData } = await supabase.from('routes').select('*').eq('id', routeId).single()
-      setRoute(routeData)
+      try {
+        const token = (await supabase.auth.getSession()).data.session?.access_token
+        const res = await fetch(`${API_BASE_URL}/routes/${routeId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) {
+          const routeData = await res.json()
+          setRoute(routeData)
+        }
 
-      const { data: intakeData } = await supabase.from('intake_data').select('*').eq('user_id', user.id).single()
-      setUserData({
-        cgpa: intakeData?.cgpa || 8.0,
-        ielts: intakeData?.ielts,
-        gre: intakeData?.gre,
-        budget: intakeData?.budget || 1500000,
-        targetRole: intakeData?.targetRole || 'Systems Engineering'
-      })
-      setLoading(false)
+        const { data: intakeData } = await supabase
+          .from('intake_data')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+        setUserData({
+          cgpa: intakeData?.cgpa || 8.0,
+          ielts: intakeData?.ielts,
+          gre: intakeData?.gre,
+          budget: intakeData?.budget || 1500000,
+          targetRole: intakeData?.targetRole || 'Systems Engineering'
+        })
+      } catch (err) {
+        console.error('Failed to fetch route details:', err)
+      } finally {
+        setLoading(false)
+      }
     }
     fetchData()
   }, [routeId, user])

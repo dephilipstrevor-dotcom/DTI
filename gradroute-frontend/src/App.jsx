@@ -6,9 +6,12 @@ import IntakePage from './pages/IntakePage'
 import DashboardPage from './pages/DashboardPage'
 import RouteDetailsPage from './pages/RouteDetailsPage'
 import ChatPage from './pages/ChatPage'
+import AccountPage from './pages/AccountPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import UpdatePasswordPage from './pages/UpdatePasswordPage'
-import AccountPage from './pages/AccountPage'
+import ComparePage from './pages/ComparePage'
+
+// import ComparePage from './pages/ComparePage'  // Uncomment when ready
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -29,13 +32,16 @@ function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/update-password" element={<UpdatePasswordPage />} />
       <Route path="/intake" element={<ProtectedRoute><IntakePage /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/report/:routeId" element={<ProtectedRoute><RouteDetailsPage /></ProtectedRoute>} />
       <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
       <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/update-password" element={<UpdatePasswordPage />} />
+      <Route path="/compare" element={<ProtectedRoute><ComparePage /></ProtectedRoute>} />
+    <Route path="/compare" element={<ProtectedRoute><ComparePage /></ProtectedRoute>} />
+
     </Routes>
   )
 }
