@@ -12,8 +12,13 @@ Study-abroad advisor app with a React (Vite) frontend and an Express/Node backen
 - Vite dev server proxies `/api` to `http://localhost:3001`. Frontend uses `VITE_API_URL=/api` (set in `gradroute-frontend/.env`).
 
 ## Required secrets (set as env vars when used)
-- Backend: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `GEMINI_API_KEY`
+- Backend: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `SUPABASE_JWT_SECRET`
 - Frontend: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_GOOGLE_CLIENT_ID`
+
+### Backend secret notes
+- `SUPABASE_JWT_SECRET` — **required**. Used by `backend/middleware/auth.js` to cryptographically verify incoming Supabase access tokens locally (HS256) on every authenticated request. Copy it from Supabase dashboard → Project settings → API → JWT Settings → JWT Secret. If missing, every authenticated route returns `500 AUTH_MISCONFIGURED` by design (fail-closed).
+- `PRODUCTION_ORIGIN` — optional but required before flipping DNS. Sets the single frontend origin allowed through CORS in production (e.g. `https://gradroute.yourdomain.com`). Defaults to the placeholder `https://gradroute.example.com`, which will block real traffic. `http://localhost:5000` and `http://localhost:5173` are allow-listed only when `NODE_ENV !== 'production'` — in production the allow-list collapses to `PRODUCTION_ORIGIN` alone.
+- `NODE_ENV` — set to `production` in every deployed environment. Gates the CORS dev-origin allow-list (see above) and should be set before traffic is flipped.
 
 ## Deployment (autoscale)
 - Build: `cd gradroute-frontend && npm install && npm run build`

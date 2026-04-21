@@ -30,17 +30,27 @@ app.use(helmet({
 // ---------- CORS ----------
 // Strict allow-list. Extend PRODUCTION_ORIGIN via env for real deploys.
 const PRODUCTION_ORIGIN = process.env.PRODUCTION_ORIGIN || 'https://gradroute.example.com'
-const ALLOWED_ORIGINS = new Set([
-  'http://localhost:5173', // Vite dev
-  PRODUCTION_ORIGIN
-])
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+// Dev origins are only allow-listed outside production. This project pins
+// Vite to port 5000 (gradroute-frontend/vite.config.js); 5173 is kept for
+// contributors running the frontend with `vite --port 5173`.
+const DEV_ORIGINS = [
+  'http://localhost:5000',
+  'http://localhost:5173'
+]
+const ALLOWED_ORIGINS = new Set(
+  IS_PRODUCTION ? [PRODUCTION_ORIGIN] : [...DEV_ORIGINS, PRODUCTION_ORIGIN]
+)
 
 app.use(cors({
   origin: (origin, cb) => {
     // Allow same-origin / server-to-server requests (no Origin header).
     if (!origin) return cb(null, true)
     if (ALLOWED_ORIGINS.has(origin)) return cb(null, true)
-    return cb(new Error(`CORS: origin not allowed: ${origin}`))
+    const err = new Error(`CORS: origin not allowed: ${origin}`)
+    err.status = 403
+    err.code = 'CORS_ORIGIN_DENIED'
+    return cb(err)
   },
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -51,6 +61,11 @@ app.use(express.json({ limit: '1mb' }))
 
 // ---------- Rate limiting ----------
 // Chat is the expensive, LLM-bound surface. Cap it hard.
+// NOTE: chatLimiter is applied BEFORE authenticate on /api/chat by design:
+// the LLM call is the costly surface, so we want to reject floods at the edge
+// (including unauthenticated floods) before spending CPU on JWT verification.
+// The 10 req/60s window per IP is generous for legitimate use; abuse via a
+// shared NAT is bounded by that same ceiling.
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -68,6 +83,35 @@ app.use('/api/routes', routeRoutes)
 app.use('/api/chat', chatLimiter, chatRoutes)
 
 app.get('/health', (req, res) => res.send('OK'))
+
+// ---------- CORS error handler ----------
+// Convert CORS_ORIGIN_DENIED errors into a proper 403 JSON response instead
+// of falling through to Express's default 500 handler. The browser blocks the
+// response at the CORS layer regardless, but 403 is the correct status for
+// tools and logs that do read the body.
+app.use((err, req, res, next) => {
+  if (err && err.code === 'CORS_ORIGIN_DENIED') {
+    return res.status(err.status || 403).json({
+      error: 'CORS_ORIGIN_DENIED',
+      detail: '> TERMINAL: origin not on allow-list.'
+    })
+  }
+  return next(err)
+})
+
+// ---------- Catch-all error handler ----------
+// Final sink for any error not handled above. Logs server-side and responds
+// with a sanitized terminal-style JSON payload so Express's default HTML
+// stack-trace renderer is never exposed to clients (including in dev).
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('[unhandled error]', err)
+  const status = err && Number.isInteger(err.status) ? err.status : 500
+  res.status(status).json({
+    error: 'INTERNAL_ERROR',
+    detail: '> TERMINAL: uplink fault. Request terminated.'
+  })
+})
 
 // ---------- Static frontend ----------
 const distDir = path.join(__dirname, '..', 'gradroute-frontend', 'dist')
