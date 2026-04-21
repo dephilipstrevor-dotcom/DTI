@@ -26,10 +26,13 @@ const SignupForm = ({ onToggle }) => {
     if (error) {
       setError(error.message)
       setLoading(false)
-    } else if (data.user) {
+      return
+    }
+    // If email confirmation is on, session will be null and the user must confirm via email.
+    if (data.session) {
       navigate('/intake')
     } else {
-      alert('Check your email for the confirmation link!')
+      setError('Account created. Check your inbox for the confirmation email, then sign in. (Tip: disable "Confirm email" in Supabase → Authentication → Providers → Email for dev.)')
       setLoading(false)
     }
   }
