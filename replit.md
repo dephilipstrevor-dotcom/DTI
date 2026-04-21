@@ -1,0 +1,21 @@
+# GradRoute
+
+Study-abroad advisor app with a React (Vite) frontend and an Express/Node backend.
+
+## Project layout
+- `gradroute-frontend/` — React 19 + Vite 8 + Tailwind 3
+- `backend/` — Express API (Supabase + Gemini)
+
+## Local dev (Replit)
+- Frontend workflow `Start application` runs `npm run dev` in `gradroute-frontend/` on port **5000** (host `0.0.0.0`, all hosts allowed).
+- Backend workflow `Backend` runs `node index.js` in `backend/` on port **3001** (localhost).
+- Vite dev server proxies `/api` to `http://localhost:3001`. Frontend uses `VITE_API_URL=/api` (set in `gradroute-frontend/.env`).
+
+## Required secrets (set as env vars when used)
+- Backend: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `GEMINI_API_KEY`
+- Frontend: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_GOOGLE_CLIENT_ID`
+
+## Deployment (autoscale)
+- Build: `cd gradroute-frontend && npm install && npm run build`
+- Run: `cd backend && npm install --omit=dev && PORT=5000 node index.js`
+- The Express server serves the built frontend from `gradroute-frontend/dist` and exposes `/api/*` routes.
