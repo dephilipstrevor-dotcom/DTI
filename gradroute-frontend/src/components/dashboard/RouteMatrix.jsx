@@ -155,4 +155,84 @@ const RouteCard = ({ route, tier, tierConfig, isBestMatch = false, onToggleSaved
   )
 }
 
-export default RouteCard
+const TIER_CONFIG = {
+  safe: {
+    label: 'SAFE',
+    accent: 'text-green-400',
+    borderAccent: 'border-green-500/30',
+    desc: 'High feasibility · within budget'
+  },
+  moderate: {
+    label: 'MODERATE',
+    accent: 'text-amber-400',
+    borderAccent: 'border-amber-500/30',
+    desc: 'Balanced risk · stretch within reach'
+  },
+  ambitious: {
+    label: 'AMBITIOUS',
+    accent: 'text-red-400',
+    borderAccent: 'border-red-500/30',
+    desc: 'High leverage · requires upside'
+  }
+}
+
+const RouteMatrix = ({ routes = [], intakeData = null }) => {
+  const userBudget = Number(intakeData?.budget) || 1500000
+  const tiers = ['safe', 'moderate', 'ambitious']
+
+  const grouped = tiers.reduce((acc, t) => {
+    acc[t] = routes.filter(r => (r?.tier || 'moderate') === t)
+    return acc
+  }, {})
+
+  const bestId = routes.length
+    ? [...routes].sort((a, b) => (b.feasibility || 0) - (a.feasibility || 0))[0]?.id
+    : null
+
+  if (routes.length === 0) {
+    return (
+      <div className="bg-[#0f172a] border border-white/5 rounded-xl p-10 text-center">
+        <div className="text-gray-400 font-mono text-sm mb-2">NO ROUTES IN MATRIX</div>
+        <div className="text-gray-500 text-xs">
+          Adjust intake parameters or seed the universities catalog, then re-run.
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-10">
+      {tiers.map(tier => {
+        const list = grouped[tier]
+        if (!list || list.length === 0) return null
+        const cfg = TIER_CONFIG[tier]
+        return (
+          <section key={tier}>
+            <div className="flex items-baseline gap-3 mb-4">
+              <h3 className={`text-xs font-mono font-bold tracking-[0.2em] ${cfg.accent}`}>
+                {cfg.label} ROUTES
+              </h3>
+              <span className="text-[10px] font-mono text-gray-500">/ {cfg.desc}</span>
+              <span className="ml-auto text-[10px] font-mono text-gray-500">
+                {list.length} PATH{list.length !== 1 ? 'S' : ''}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {list.map(r => (
+                <RouteCard
+                  key={r.id}
+                  route={{ ...r, userBudget }}
+                  tier={tier}
+                  tierConfig={cfg}
+                  isBestMatch={r.id === bestId}
+                />
+              ))}
+            </div>
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
+export default RouteMatrix
