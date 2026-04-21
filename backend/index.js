@@ -30,8 +30,12 @@ app.use(helmet({
 // ---------- CORS ----------
 // Strict allow-list. Extend PRODUCTION_ORIGIN via env for real deploys.
 const PRODUCTION_ORIGIN = process.env.PRODUCTION_ORIGIN || 'https://gradroute.example.com'
+// This project pins Vite to port 5000 (gradroute-frontend/vite.config.js).
+// 5173 is also allow-listed because it is the Vite default and convenient for
+// contributors running the frontend with `vite --port 5173`.
 const ALLOWED_ORIGINS = new Set([
-  'http://localhost:5173', // Vite dev
+  'http://localhost:5000',
+  'http://localhost:5173',
   PRODUCTION_ORIGIN
 ])
 
