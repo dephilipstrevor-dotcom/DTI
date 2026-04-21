@@ -44,7 +44,10 @@ app.use(cors({
     // Allow same-origin / server-to-server requests (no Origin header).
     if (!origin) return cb(null, true)
     if (ALLOWED_ORIGINS.has(origin)) return cb(null, true)
-    return cb(new Error(`CORS: origin not allowed: ${origin}`))
+    const err = new Error(`CORS: origin not allowed: ${origin}`)
+    err.status = 403
+    err.code = 'CORS_ORIGIN_DENIED'
+    return cb(err)
   },
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -55,6 +58,11 @@ app.use(express.json({ limit: '1mb' }))
 
 // ---------- Rate limiting ----------
 // Chat is the expensive, LLM-bound surface. Cap it hard.
+// NOTE: chatLimiter is applied BEFORE authenticate on /api/chat by design:
+// the LLM call is the costly surface, so we want to reject floods at the edge
+// (including unauthenticated floods) before spending CPU on JWT verification.
+// The 10 req/60s window per IP is generous for legitimate use; abuse via a
+// shared NAT is bounded by that same ceiling.
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
@@ -72,6 +80,21 @@ app.use('/api/routes', routeRoutes)
 app.use('/api/chat', chatLimiter, chatRoutes)
 
 app.get('/health', (req, res) => res.send('OK'))
+
+// ---------- CORS error handler ----------
+// Convert CORS_ORIGIN_DENIED errors into a proper 403 JSON response instead
+// of falling through to Express's default 500 handler. The browser blocks the
+// response at the CORS layer regardless, but 403 is the correct status for
+// tools and logs that do read the body.
+app.use((err, req, res, next) => {
+  if (err && err.code === 'CORS_ORIGIN_DENIED') {
+    return res.status(err.status || 403).json({
+      error: 'CORS_ORIGIN_DENIED',
+      detail: '> TERMINAL: origin not on allow-list.'
+    })
+  }
+  return next(err)
+})
 
 // ---------- Static frontend ----------
 const distDir = path.join(__dirname, '..', 'gradroute-frontend', 'dist')
