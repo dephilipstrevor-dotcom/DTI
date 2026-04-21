@@ -30,16 +30,19 @@ app.use(helmet({
 // ---------- CORS ----------
 // Strict allow-list. Extend PRODUCTION_ORIGIN via env for real deploys.
 const PRODUCTION_ORIGIN = process.env.PRODUCTION_ORIGIN || 'https://gradroute.example.com'
-const IS_PRODUCTION = process.env.NODE_ENV === 'production'
-// Dev origins are only allow-listed outside production. This project pins
-// Vite to port 5000 (gradroute-frontend/vite.config.js); 5173 is kept for
-// contributors running the frontend with `vite --port 5173`.
+// Fail-closed on NODE_ENV: dev origins are only allow-listed when NODE_ENV is
+// explicitly 'development'. Any other value (including unset, 'production',
+// 'test', 'staging', typos) collapses the allow-list to PRODUCTION_ORIGIN only
+// so a forgotten NODE_ENV in prod can never leak localhost through CORS.
+// This project pins Vite to port 5000 (gradroute-frontend/vite.config.js);
+// 5173 is kept for contributors running `vite --port 5173`.
+const ALLOW_DEV_ORIGINS = process.env.NODE_ENV === 'development'
 const DEV_ORIGINS = [
   'http://localhost:5000',
   'http://localhost:5173'
 ]
 const ALLOWED_ORIGINS = new Set(
-  IS_PRODUCTION ? [PRODUCTION_ORIGIN] : [...DEV_ORIGINS, PRODUCTION_ORIGIN]
+  ALLOW_DEV_ORIGINS ? [...DEV_ORIGINS, PRODUCTION_ORIGIN] : [PRODUCTION_ORIGIN]
 )
 
 app.use(cors({
@@ -84,13 +87,26 @@ app.use('/api/chat', chatLimiter, chatRoutes)
 
 app.get('/health', (req, res) => res.send('OK'))
 
+// ---------- Static frontend ----------
+const distDir = path.join(__dirname, '..', 'gradroute-frontend', 'dist')
+if (fs.existsSync(distDir)) {
+  app.use(express.static(distDir))
+  app.get(/^\/(?!api\/).*/, (req, res) => {
+    res.sendFile(path.join(distDir, 'index.html'))
+  })
+}
+
 // ---------- CORS error handler ----------
 // Convert CORS_ORIGIN_DENIED errors into a proper 403 JSON response instead
-// of falling through to Express's default 500 handler. The browser blocks the
-// response at the CORS layer regardless, but 403 is the correct status for
-// tools and logs that do read the body.
+// of falling through to Express's default 500 handler. The browser itself
+// will block the response body at the CORS layer, so a human in a browser
+// never sees it — but the JSON body is still useful for: (1) server-side
+// access logs, (2) curl / Postman / CI probes that don't enforce CORS, and
+// (3) same-origin tooling that hits the API directly. 403 is the correct
+// status either way.
 app.use((err, req, res, next) => {
   if (err && err.code === 'CORS_ORIGIN_DENIED') {
+    if (res.headersSent) return next(err)
     return res.status(err.status || 403).json({
       error: 'CORS_ORIGIN_DENIED',
       detail: '> TERMINAL: origin not on allow-list.'
@@ -100,27 +116,22 @@ app.use((err, req, res, next) => {
 })
 
 // ---------- Catch-all error handler ----------
-// Final sink for any error not handled above. Logs server-side and responds
-// with a sanitized terminal-style JSON payload so Express's default HTML
-// stack-trace renderer is never exposed to clients (including in dev).
+// Final sink for any error not handled above, registered AFTER every route
+// (including the static-frontend fallback) so sendFile / stream errors also
+// land here. Logs server-side and responds with a sanitized terminal-style
+// JSON payload so Express's default HTML stack-trace renderer is never
+// exposed to clients (including in dev). If headers were already sent
+// mid-stream, delegate to Express's default finalizer to close the socket.
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error('[unhandled error]', err)
+  if (res.headersSent) return next(err)
   const status = err && Number.isInteger(err.status) ? err.status : 500
   res.status(status).json({
     error: 'INTERNAL_ERROR',
     detail: '> TERMINAL: uplink fault. Request terminated.'
   })
 })
-
-// ---------- Static frontend ----------
-const distDir = path.join(__dirname, '..', 'gradroute-frontend', 'dist')
-if (fs.existsSync(distDir)) {
-  app.use(express.static(distDir))
-  app.get(/^\/(?!api\/).*/, (req, res) => {
-    res.sendFile(path.join(distDir, 'index.html'))
-  })
-}
 
 const PORT = process.env.PORT || 5000
 app.listen(PORT, '0.0.0.0', () => console.log(`Backend running on port ${PORT}`))
