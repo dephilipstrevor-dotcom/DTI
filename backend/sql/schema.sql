@@ -58,6 +58,17 @@ create table if not exists public.universities (
   created_at timestamptz default now()
 );
 
+-- Patch older versions of the universities table that may be missing columns.
+alter table public.universities add column if not exists city text;
+alter table public.universities add column if not exists "tuitionPerYear" bigint default 0;
+alter table public.universities add column if not exists "livingCostPerYear" bigint default 0;
+alter table public.universities add column if not exists "greRequired" int;
+alter table public.universities add column if not exists "applicationDeadline" text;
+alter table public.universities add column if not exists "intakeTerms" text;
+alter table public.universities add column if not exists notes text;
+alter table public.universities add column if not exists ranking int;
+alter table public.universities add column if not exists "prTimelineMonths" int default 48;
+
 -- ---------- routes (generated per user) ----------
 create table if not exists public.routes (
   id uuid primary key default gen_random_uuid(),
